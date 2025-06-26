@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MRFluffolFilm</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet" />
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0; padding: 0;
+    }
+    body {
+      background-color: #141414;
+      color: #fff;
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+    }
+    header {
+      background: linear-gradient(90deg, #e50914, #b00610);
+      padding: 20px 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+    }
+    header h1 {
+      font-size: 28px;
+      font-weight: 800;
+      letter-spacing: 3px;
+      user-select: none;
+    }
+    #search-container {
+      position: relative;
+      max-width: 400px;
+      width: 100%;
+    }
+    #searchInput {
+      width: 100%;
+      padding: 12px 45px 12px 15px;
+      font-size: 16px;
+      border-radius: 30px;
+      border: none;
+      background-color: #222;
+      color: #fff;
+    }
+    #searchBtn {
+      position: absolute;
+      right: 5px;
+      top: 50%;
+      transform: translateY(-50%);
+      background-color: #e50914;
+      border: none;
+      padding: 8px 15px;
+      border-radius: 20px;
+      cursor: pointer;
+      color: white;
+      font-weight: 700;
+      box-shadow: 0 2px 8px rgba(229, 9, 20, 0.8);
+    }
+    #results {
+      padding: 20px 40px;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 20px;
+    }
+    .card {
+      background-color: #222;
+      border-radius: 8px;
+      overflow: hidden;
+      cursor: pointer;
+      transition: transform 0.25s ease, box-shadow 0.25s ease;
+    }
+    .card:hover {
+      transform: scale(1.05);
+      box-shadow: 0 10px 20px rgba(229, 9, 20, 0.7);
+    }
+    .card img {
+      width: 100%;
+      height: 270px;
+      object-fit: cover;
+    }
+    .card h3 {
+      font-size: 14px;
+      font-weight: 600;
+      padding: 12px 10px;
+      text-align: center;
+    }
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.85);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+    }
+    .modal {
+      background-color: #1a1a1a;
+      padding: 20px;
+      border-radius: 16px;
+      max-width: 800px;
+      width: 90%;
+      color: white;
+      box-shadow: 0 0 30px rgba(229, 9, 20, 0.5);
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      position: relative;
+    }
+    .modal img {
+      width: 100%;
+      border-radius: 12px;
+      max-height: 400px;
+      object-fit: cover;
+    }
+    .modal h2 {
+      font-size: 24px;
+      font-weight: 800;
+    }
+    .modal p {
+      font-size: 15px;
+      line-height: 1.5;
+      color: #ccc;
+    }
+    .modal .actors {
+      font-size: 14px;
+      color: #aaa;
+    }
+    .modal .actions {
+      display: flex;
+      gap: 15px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .modal button {
+      background-color: #e50914;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 8px;
+      color: white;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .modal select {
+      background-color: #222;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 8px;
+      color: white;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    .close-btn {
+      position: absolute;
+      top: 15px;
+      right: 20px;
+      font-size: 24px;
+      cursor: pointer;
+      color: #fff;
+    }
+    #player-container {
+      padding: 30px 40px;
+      background: #000;
+      max-width: 900px;
+      margin: 20px auto;
+      border-radius: 12px;
+      box-shadow: 0 0 30px rgba(229,9,20,0.7);
+    }
+    @media (max-width: 700px) {
+      .modal {
+        padding: 10px;
+      }
+      #player-container {
+        padding: 15px;
+        max-width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>MRFluffolFilm 🎬</h1>
+    <div id="search-container">
+      <input type="text" id="searchInput" placeholder="Cerca film o serie..." autocomplete="off" />
+      <button id="searchBtn">Cerca</button>
+    </div>
+  </header>
+  <div id="results"></div>
+  <div id="player-container" style="display:none;"></div>
+
+  <script>
+    const tmdbKey = 'a3c17d492a24a9f77acb23626404edd1';
+
+    function normalizeText(text) {
+      return text.toLowerCase().replace(/\s+/g, '');
+    }
+
+    async function searchMedia(query) {
+      const url = `https://api.themoviedb.org/3/search/multi?api_key=${tmdbKey}&language=it-IT&query=${encodeURIComponent(query)}`;
+      const res = await fetch(url);
+      const data = await res.json();
+      const normalizedQuery = normalizeText(query);
+      return data.results.filter(item => {
+        const title = item.title || item.name || '';
+        return (item.media_type === 'movie' || item.media_type === 'tv') &&
+          normalizeText(title).includes(normalizedQuery);
+      });
+    }
+
+    async function getDetails(id, type) {
+      const url = `https://api.themoviedb.org/3/${type}/${id}?api_key=${tmdbKey}&language=it-IT`;
+      const res = await fetch(url);
+      return await res.json();
+    }
+
+    // Mostra player integrato e nasconde modale
+    function showPlayer(url) {
+      // Rimuove eventuali modali aperte
+      document.querySelectorAll('.modal-overlay').forEach(el => el.remove());
+
+      const playerContainer = document.getElementById('player-container');
+      playerContainer.style.display = 'block';
+      playerContainer.innerHTML = `
+        <iframe src="${url}" width="100%" height="500px" style="border:none; border-radius:12px;" allowfullscreen allow="autoplay"></iframe>
+        <button id="closePlayerBtn" style="margin-top: 15px; background:#e50914; border:none; padding:10px 20px; border-radius:8px; color:#fff; font-weight:600; cursor:pointer;">Chiudi Player</button>
+      `;
+
+      document.getElementById('closePlayerBtn').addEventListener('click', () => {
+        playerContainer.style.display = 'none';
+        playerContainer.innerHTML = '';
+      });
+
+      // Scrolla al player smooth
+      playerContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function showModal(info, type) {
+      const overlay = document.createElement('div');
+      overlay.className = 'modal-overlay';
+
+      // Attori principali max 5
+      const actors = info.credits?.cast?.slice(0, 5).map(a => a.name).join(', ') || 'N/A';
+
+      // Trailer YouTube
+      const trailer = info.videos?.results.find(v => v.type === 'Trailer' && v.site === 'YouTube');
+
+      // Variabili per selezione stagione/episodio
+      let selectedSeason = 1;
+      let selectedEpisode = 1;
+
+      let seasonOptions = '';
+      if (type === 'tv' && info.seasons) {
+        for (let i = 0; i < info.seasons.length; i++) {
+          // Evita stagioni speciali con season_number 0
+          if (info.seasons[i].season_number > 0)
+            seasonOptions += `<option value="${info.seasons[i].season_number}">Stagione ${info.seasons[i].season_number}</option>`;
+        }
+      }
+
+      // Funzione per caricare gli episodi della stagione selezionata
+      async function loadEpisodes(seasonNum) {
+        const seasonData = await fetch(`https://api.themoviedb.org/3/tv/${info.id}/season/${seasonNum}?api_key=${tmdbKey}&language=it-IT`).then(res => res.json());
+        let episodesOptions = '';
+        seasonData.episodes.forEach(ep => {
+          episodesOptions += `<option value="${ep.episode_number}">Episodio ${ep.episode_number} - ${ep.name}</option>`;
+        });
+        episodeSelect.innerHTML = episodesOptions;
+        selectedEpisode = seasonData.episodes[0]?.episode_number || 1;
+      }
+
+      overlay.innerHTML = `
+        <div class="modal">
+          <span class="close-btn" title="Chiudi" onclick="this.closest('.modal-overlay').remove()">&times;</span>
+          <img src="https://image.tmdb.org/t/p/w780${info.backdrop_path || info.poster_path}" alt="Poster" />
+          <h2>${type === 'movie' ? info.title : info.name}</h2>
+          <p>${info.overview || 'Nessuna descrizione disponibile.'}</p>
+          <div class="actors"><strong>Attori principali:</strong> ${actors}</div>
+          <div class="actions">
+            ${
+              type === 'tv'
+                ? `
+                <label for="seasonSelect">Stagione:</label>
+                <select id="seasonSelect">${seasonOptions}</select>
+                <label for="episodeSelect">Episodio:</label>
+                <select id="episodeSelect"></select>
+                <button id="playBtn">▶ Riproduci</button>
+              `
+                : `<button id="playBtn">▶ Riproduci</button>`
+            }
+            ${trailer ? `<button onclick="window.open('https://www.youtube.com/watch?v=${trailer.key}', '_blank')">🎬 Trailer</button>` : ''}
+          </div>
+        </div>
+      `;
+
+      document.body.appendChild(overlay);
+
+      if (type === 'tv') {
+        const seasonSelect = document.getElementById('seasonSelect');
+        const episodeSelect = document.getElementById('episodeSelect');
+
+        // Carica episodi della prima stagione per default
+        loadEpisodes(selectedSeason);
+
+        seasonSelect.addEventListener('change', e => {
+          selectedSeason = parseInt(e.target.value);
+          loadEpisodes(selectedSeason);
+        });
+
+        episodeSelect.addEventListener('change', e => {
+          selectedEpisode = parseInt(e.target.value);
+        });
+      }
+
+      document.getElementById('playBtn').addEventListener('click', () => {
+        if (type === 'movie') {
+          showPlayer(`https://vixsrc.to/movie/${info.id}`);
+        } else if (type === 'tv') {
+          showPlayer(`https://vixsrc.to/tv/${info.id}/${selectedSeason}/${selectedEpisode}`);
+        }
+      });
+    }
+
+    function createCard(item) {
+      const div = document.createElement('div');
+      div.className = 'card';
+      const title = item.title || item.name;
+      const img = item.poster_path ? `https://image.tmdb.org/t/p/w300${item.poster_path}` : 'https://via.placeholder.com/300x450?text=No+Image';
+
+      div.innerHTML = `
+        <img src="${img}" alt="${title}" />
+        <h3>${title}</h3>
+      `;
+
+      div.addEventListener('click', async () => {
+        const details = await getDetails(item.id, item.media_type);
+        showModal(details, item.media_type);
+      });
+
+      return div;
+    }
+
+    async function doSearch() {
+      const queryInput = document.getElementById('searchInput');
+      const query = queryInput.value.trim();
+      const results = document.getElementById('results');
+      if (!query) return;
+      results.innerHTML = '<p style="text-align:center;">Caricamento...</p>';
+      const items = await searchMedia(query);
+      results.innerHTML = '';
+      if (!items.length) {
+        results.innerHTML = '<p style="text-align:center;">Nessun risultato trovato.</p>';
+        return;
+      }
+      items.forEach(item => results.appendChild(createCard(item)));
+      // Scrolla ai risultati
+      results.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    document.getElementById('searchBtn').addEventListener('click', doSearch);
+    document.getElementById('searchInput').addEventListener('keydown', e => {
+      if (e.key === 'Enter') doSearch();
+    });
+  </script>
+</body>
+</html>
