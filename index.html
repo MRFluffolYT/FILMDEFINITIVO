@@ -4,12 +4,11 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>MRFluffolFilm</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
   <style>
     * {
       box-sizing: border-box;
-      margin: 0;
-      padding: 0;
+      margin: 0; padding: 0;
     }
 
     body {
@@ -67,10 +66,10 @@
     }
 
     #results {
-      padding: 20px 40px;
+      padding: 20px 20px;
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-      gap: 20px;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 15px;
     }
 
     .card {
@@ -79,6 +78,9 @@
       overflow: hidden;
       cursor: pointer;
       transition: transform 0.25s ease, box-shadow 0.25s ease;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
     }
 
     .card:hover {
@@ -88,21 +90,26 @@
 
     .card img {
       width: 100%;
-      height: 270px;
+      height: 210px;
       object-fit: cover;
+      border-bottom: 1px solid #444;
+      border-radius: 8px 8px 0 0;
     }
 
     .card h3 {
       font-size: 14px;
       font-weight: 600;
-      padding: 12px 10px;
+      padding: 10px 8px;
       text-align: center;
+      flex-grow: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
     .modal-overlay {
       position: fixed;
-      top: 0;
-      left: 0;
+      top: 0; left: 0;
       width: 100vw;
       height: 100vh;
       background: rgba(0, 0, 0, 0.85);
@@ -110,6 +117,8 @@
       align-items: center;
       justify-content: center;
       z-index: 9999;
+      padding: 15px;
+      overflow-y: auto;
     }
 
     .modal {
@@ -117,7 +126,7 @@
       padding: 20px;
       border-radius: 16px;
       max-width: 800px;
-      width: 90%;
+      width: 100%;
       color: white;
       box-shadow: 0 0 30px rgba(229, 9, 20, 0.5);
       display: flex;
@@ -142,11 +151,24 @@
       font-size: 15px;
       line-height: 1.5;
       color: #ccc;
+      white-space: pre-line;
     }
 
     .modal .actors {
       font-size: 14px;
       color: #aaa;
+    }
+
+    .modal .actors .actor-name {
+      cursor: pointer;
+      color: #e50914;
+      user-select: none;
+      transition: color 0.2s ease;
+    }
+
+    .modal .actors .actor-name:hover {
+      color: #ff3b3b;
+      text-decoration: underline;
     }
 
     .modal .actions {
@@ -163,15 +185,24 @@
       color: white;
       font-weight: 600;
       cursor: pointer;
+      user-select: none;
+      transition: background-color 0.3s ease;
+    }
+
+    .modal button:hover {
+      background-color: #b00710;
     }
 
     .close-btn {
       position: absolute;
       top: 15px;
       right: 20px;
-      font-size: 24px;
+      font-size: 28px;
       cursor: pointer;
       color: #fff;
+      user-select: none;
+      font-weight: 700;
+      line-height: 1;
     }
 
     iframe.player {
@@ -188,6 +219,7 @@
       border: none;
       border-radius: 8px;
       margin-bottom: 10px;
+      cursor: pointer;
     }
 
     /* Player close button in player overlay */
@@ -202,46 +234,21 @@
       user-select: none;
     }
 
-    /* Mobile responsiveness */
+    /* Scroll bar for modals on mobile */
     @media (max-width: 600px) {
-      header {
-        padding: 15px 20px;
-        justify-content: center;
-      }
-      header h1 {
-        font-size: 22px;
-        flex-basis: 100%;
-        text-align: center;
-        margin-bottom: 10px;
-      }
-      #search-container {
-        max-width: 100%;
-      }
-      #searchInput {
-        font-size: 14px;
-        padding: 10px 40px 10px 12px;
-      }
-      #searchBtn {
-        padding: 7px 12px;
-        font-size: 14px;
-      }
-      #results {
-        padding: 15px 20px;
-        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-        gap: 15px;
-      }
-      .card img {
-        height: 220px;
-      }
       .modal {
-        max-width: 95%;
+        max-width: 100%;
         padding: 15px;
       }
-      .modal h2 {
-        font-size: 20px;
-      }
       iframe.player {
-        height: 280px;
+        height: 300px;
+      }
+      #results {
+        gap: 10px;
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+      }
+      .card img {
+        height: 180px;
       }
     }
   </style>
@@ -250,7 +257,7 @@
   <header>
     <h1>MRFluffolFilm 🎬</h1>
     <div id="search-container">
-      <input type="text" id="searchInput" placeholder="Cerca film, serie o attori..." />
+      <input type="text" id="searchInput" placeholder="Cerca film, serie o attori...">
       <button id="searchBtn">Cerca</button>
     </div>
   </header>
@@ -260,16 +267,12 @@
     const tmdbKey = 'a3c17d492a24a9f77acb23626404edd1';
 
     async function searchMedia(query) {
-      const urlMulti = `https://api.themoviedb.org/3/search/multi?api_key=${tmdbKey}&language=it-IT&query=${encodeURIComponent(
-        query
-      )}`;
+      const urlMulti = `https://api.themoviedb.org/3/search/multi?api_key=${tmdbKey}&language=it-IT&query=${encodeURIComponent(query)}`;
       const resMulti = await fetch(urlMulti);
       const dataMulti = await resMulti.json();
 
-      const moviesTv = dataMulti.results.filter(
-        (item) => item.media_type === 'movie' || item.media_type === 'tv'
-      );
-      const people = dataMulti.results.filter((item) => item.media_type === 'person');
+      const moviesTv = dataMulti.results.filter(item => item.media_type === 'movie' || item.media_type === 'tv');
+      const people = dataMulti.results.filter(item => item.media_type === 'person');
 
       let peopleMedia = [];
       for (const person of people) {
@@ -277,7 +280,7 @@
         const resPerson = await fetch(urlPerson);
         const dataPerson = await resPerson.json();
 
-        const knownFor = dataPerson.cast.filter((c) => c.media_type === 'movie' || c.media_type === 'tv');
+        const knownFor = dataPerson.cast.filter(c => c.media_type === 'movie' || c.media_type === 'tv');
         peopleMedia = peopleMedia.concat(knownFor);
       }
 
@@ -301,14 +304,35 @@
       return await res.json();
     }
 
-    function showModal(info, type) {
+    function createCard(item) {
+      const card = document.createElement('div');
+      card.className = 'card';
+
+      const imgPath = item.poster_path || item.backdrop_path;
+      const imgUrl = imgPath ? `https://image.tmdb.org/t/p/w300${imgPath}` : 'https://via.placeholder.com/300x450?text=No+Image';
+
+      const title = item.title || item.name || 'Titolo sconosciuto';
+
+      card.innerHTML = `
+        <img src="${imgUrl}" alt="${title}" loading="lazy" />
+        <h3>${title}</h3>
+      `;
+
+      card.addEventListener('click', async () => {
+        const details = await getDetails(item.id, item.media_type);
+        showModal(details, item.media_type);
+      });
+
+      return card;
+    }
+
+    async function showModal(info, type) {
       const overlay = document.createElement('div');
       overlay.className = 'modal-overlay';
 
-      const actors =
-        info.credits && info.credits.cast ? info.credits.cast.slice(0, 5).map((a) => a.name).join(', ') : 'Nessuna informazione';
-      const trailer =
-        info.videos && info.videos.results ? info.videos.results.find((v) => v.type === 'Trailer' && v.site === 'YouTube') : null;
+      const actors = info.credits && info.credits.cast ? info.credits.cast.slice(0, 5) : [];
+
+      const trailer = info.videos && info.videos.results ? info.videos.results.find(v => v.type === 'Trailer' && v.site === 'YouTube') : null;
 
       const isMovie = type === 'movie';
       const title = isMovie ? info.title : info.name;
@@ -317,28 +341,24 @@
       let seasonsHtml = '';
       if (!isMovie && info.seasons) {
         seasonsHtml = `
-          <select id="seasonSelect">
-            ${info.seasons.map((s) => `<option value="${s.season_number}">${s.name}</option>`).join('')}
+          <select id="seasonSelect" aria-label="Seleziona stagione">
+            ${info.seasons.map(s => `<option value="${s.season_number}">${s.name}</option>`).join('')}
           </select>
-          <select id="episodeSelect"></select>
+          <select id="episodeSelect" aria-label="Seleziona episodio"></select>
         `;
       }
 
       overlay.innerHTML = `
-        <div class="modal">
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
           <span class="close-btn" title="Chiudi">&times;</span>
-          <img src="${imageUrl}" alt="Poster" />
-          <h2>${title}</h2>
+          <img src="${imageUrl}" alt="Poster ${title}" />
+          <h2 id="modalTitle">${title}</h2>
           <p>${info.overview || 'Nessuna descrizione disponibile.'}</p>
-          <div class="actors"><strong>Attori principali:</strong> ${actors}</div>
+          <div class="actors"><strong>Attori principali:</strong> ${actors.map(actor => `<span class="actor-name" data-id="${actor.id}" tabindex="0" style="cursor:pointer; color:#e50914;">${actor.name}</span>`).join(', ')}</div>
           <div class="actions">
             ${seasonsHtml}
-            <button id="playBtn">▶ Riproduci</button>
-            ${
-              trailer
-                ? `<button id="trailerBtn">🎬 Trailer</button>`
-                : ''
-            }
+            <button id="playBtn" aria-label="Riproduci">▶ Riproduci</button>
+            ${trailer ? `<button id="trailerBtn" aria-label="Guarda trailer">🎬 Trailer</button>` : ''}
           </div>
           <div id="playerContainer"></div>
         </div>
@@ -350,18 +370,31 @@
         overlay.remove();
       });
 
+      // Click sugli attori per aprire scheda attore
+      overlay.querySelectorAll('.actor-name').forEach(span => {
+        span.addEventListener('click', async () => {
+          const actorId = span.getAttribute('data-id');
+          const actorData = await getActorDetails(actorId);
+          showActorModal(actorData);
+        });
+        span.addEventListener('keydown', async (e) => {
+          if(e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            const actorId = span.getAttribute('data-id');
+            const actorData = await getActorDetails(actorId);
+            showActorModal(actorData);
+          }
+        });
+      });
+
       if (!isMovie && info.seasons) {
         const seasonSelect = overlay.querySelector('#seasonSelect');
         const episodeSelect = overlay.querySelector('#episodeSelect');
 
         async function loadEpisodes(season) {
-          const res = await fetch(
-            `https://api.themoviedb.org/3/tv/${info.id}/season/${season}?api_key=${tmdbKey}&language=it-IT`
-          );
+          const res = await fetch(`https://api.themoviedb.org/3/tv/${info.id}/season/${season}?api_key=${tmdbKey}&language=it-IT`);
           const data = await res.json();
-          episodeSelect.innerHTML = data.episodes
-            .map((e) => `<option value="${e.episode_number}">${e.episode_number} - ${e.name}</option>`)
-            .join('');
+          episodeSelect.innerHTML = data.episodes.map(e => `<option value="${e.episode_number}">${e.episode_number} - ${e.name}</option>`).join('');
         }
 
         seasonSelect.addEventListener('change', () => {
@@ -423,47 +456,55 @@
       });
     }
 
-    function createCard(item) {
-      const div = document.createElement('div');
-      div.className = 'card';
-      const title = item.title || item.name;
-      const img = item.poster_path
-        ? `https://image.tmdb.org/t/p/w300${item.poster_path}`
-        : 'https://via.placeholder.com/300x450?text=No+Image';
+    async function getActorDetails(id) {
+      const url = `https://api.themoviedb.org/3/person/${id}?api_key=${tmdbKey}&language=it-IT`;
+      const res = await fetch(url);
+      return await res.json();
+    }
 
-      div.innerHTML = `
-        <img src="${img}" alt="${title}" />
-        <h3>${title}</h3>
+    function showActorModal(actor) {
+      const overlay = document.createElement('div');
+      overlay.className = 'modal-overlay';
+
+      const profilePath = actor.profile_path ? `https://image.tmdb.org/t/p/w300${actor.profile_path}` : 'https://via.placeholder.com/300x450?text=No+Image';
+
+      overlay.innerHTML = `
+        <div class="modal" style="max-width:400px;">
+          <span class="close-btn" title="Chiudi">&times;</span>
+          <img src="${profilePath}" alt="${actor.name}" style="border-radius:12px; width:100%; height:auto;" />
+          <h2>${actor.name}</h2>
+          <p>${actor.biography ? actor.biography : 'Nessuna descrizione disponibile.'}</p>
+        </div>
       `;
 
-      div.addEventListener('click', async () => {
-        const details = await getDetails(item.id, item.media_type);
-        showModal(details, item.media_type);
-      });
+      document.body.appendChild(overlay);
 
-      return div;
+      overlay.querySelector('.close-btn').addEventListener('click', () => {
+        overlay.remove();
+      });
     }
 
-    async function doSearch() {
+    document.getElementById('searchBtn').addEventListener('click', async () => {
       const query = document.getElementById('searchInput').value.trim();
-      const results = document.getElementById('results');
-      results.innerHTML = '';
-      if (!query) return;
-
-      const data = await searchMedia(query);
-      if (!data.length) {
-        results.innerHTML = '<p style="text-align:center; color:#aaa;">Nessun risultato trovato.</p>';
+      if (!query) return alert('Inserisci qualcosa da cercare.');
+      const resultsDiv = document.getElementById('results');
+      resultsDiv.innerHTML = '<p>Caricamento...</p>';
+      const results = await searchMedia(query);
+      resultsDiv.innerHTML = '';
+      if (results.length === 0) {
+        resultsDiv.innerHTML = '<p>Nessun risultato trovato.</p>';
         return;
       }
-
-      data.forEach((item) => {
-        results.appendChild(createCard(item));
+      results.forEach(item => {
+        const card = createCard(item);
+        resultsDiv.appendChild(card);
       });
-    }
+    });
 
-    document.getElementById('searchBtn').addEventListener('click', doSearch);
-    document.getElementById('searchInput').addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') doSearch();
+    document.getElementById('searchInput').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        document.getElementById('searchBtn').click();
+      }
     });
   </script>
 </body>
